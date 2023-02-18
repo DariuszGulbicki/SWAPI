@@ -121,7 +121,7 @@ public class RestServer {
         server[path + "/:path"] = { request in
             let req = self.convertHTTPReqToRestReq(req: request)
             let res = RestResponse()
-            let suri: String = req.getUri().replacingOccurrences(of: path, with: "")
+            let suri: String = self.checkPath(path: req.getUri().replacingOccurrences(of: path, with: ""))
             print(suri)
             switch req.getMethod() {
                 case "GET":
@@ -174,6 +174,21 @@ public class RestServer {
     public func stop() {
         server.stop()
     }
+
+    private func checkPath(path: String) -> String {
+        var newPath = path
+        if newPath.last == "/" && newPath != "/" {
+            newPath.removeLast()
+        }
+        if newPath.first != "/" {
+            newPath = "/" + newPath
+        }
+        while newPath.contains("//") {
+            newPath = newPath.replacingOccurrences(of: "//", with: "/")
+        }
+        return newPath
+    }
+
 
     private func convertHTTPReqToRestReq(req: HttpRequest) -> RestRequest {
         let method = req.method
