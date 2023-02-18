@@ -2,7 +2,7 @@ public class RestMethodHandler: RestHandler {
 
     private var method: (_ req: RestRequest, _ res: RestResponse) -> RestResponse
 
-    required init(method: @escaping (_ req: RestRequest, _ res: RestResponse) -> RestResponse) {
+    required public init(method: @escaping (_ req: RestRequest, _ res: RestResponse) -> RestResponse) {
         self.method = method
     }
 
