@@ -21,6 +21,6 @@ let package = Package(
     targets: [
         .target(
             name: "SWAPI",
-            dependencies: [.product(name: "Swifter", package: "swifter")]),
+            dependencies: ["Swifter"]),
     ]
 )
