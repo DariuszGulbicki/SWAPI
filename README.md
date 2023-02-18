@@ -21,7 +21,7 @@ For now SWAPI only supports RESTful APIs.
 Support for SOAP and GraphQL is planned for the future.
 
 ### Supported API paradigms:
-- [x] **RESTful**
+- [x] **REST**
 - [ ] **SOAP**
 - [ ] **GraphQL**
 
