@@ -7,6 +7,12 @@ public class RestMethodHandler: RestHandler {
     }
 
     public func handle(req: RestRequest, res: RestResponse) -> RestResponse {
+        let res = method(req, res)
+        if (!res.getHeaders().keys.contains(element: "Server")) {
+            var headers = res.getHeaders()
+            headers["Server"] = "SWAPI 1.0"
+            res.setHeaders(headers: headers)
+        }
         return method(req, res)
     }
 

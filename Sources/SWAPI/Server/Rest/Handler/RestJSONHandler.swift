@@ -14,7 +14,7 @@ public class RestJSONHandler : RestHandler {
     
     public func handle(req: RestRequest, res: RestResponse) -> RestResponse {
         res.setBody(body: json)
-        res.setHeaders(headers: ["Content-Type": "application/json"])
+        res.setHeaders(headers: ["Content-Type": "application/json", "Server": "SWAPI 1.0"])
         return res
     }
     
