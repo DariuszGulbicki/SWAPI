@@ -145,10 +145,6 @@ server.get(uri: "/bodytest", handler: RestMethodHandler(method: { req, res in
 }))
 ```
 
-## Contributing
-
-Contributions are welcome! If you have an idea for a new feature or a bug fix, please create a new issue or pull request.
-
 ## Example usage
 
 ```swift
@@ -220,6 +216,10 @@ public struct Example {
 
 }
 ```
+
+## Contributing
+
+Contributions are welcome! If you have an idea for a new feature or a bug fix, please create a new issue or pull request.
 
 ## License
 
