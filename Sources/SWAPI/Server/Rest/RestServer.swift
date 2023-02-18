@@ -73,11 +73,56 @@ public class RestServer {
         internalServerErrorHandler = handler
     }
     
-    public func start(port: UInt16, path: String) {
+    public func start(_ port: UInt16, path: String = "") {
+        server[path] = {
+            let req = self.convertHTTPReqToRestReq(req: $0)
+            let res = RestResponse()
+            switch req.getMethod() {
+                case "GET":
+                    if let handler = self.getHandlers["/"] {
+                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
+                    } else {
+                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
+                    }
+                case "POST":
+                    if let handler = self.postHandlers["/"] {
+                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
+                    } else {
+                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
+                    }
+                case "PUT":
+                    if let handler = self.putHandlers["/"] {
+                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
+                    } else {
+                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
+                    }
+                case "DELETE":
+                    if let handler = self.deleteHandlers["/"] {
+                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
+                    } else {
+                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
+                    }
+                case "PATCH":
+                    if let handler = self.patchHandlers["/"] {
+                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
+                    } else {
+                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
+                    }
+                case "HEAD":
+                    if let handler = self.headHandlers["/"] {
+                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
+                    } else {
+                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
+                    }
+                default:
+                    return self.convertRestResToHTTPRes(res: self.methodNotAllowedHandler.handle(req: req, res: res))
+            }
+        }
         server[path + "/:path"] = { request in
             let req = self.convertHTTPReqToRestReq(req: request)
             let res = RestResponse()
-            let suri = req.getUri().replacingOccurrences(of: path, with: "")
+            let suri: String = self.checkPath(path: req.getUri().replacingOccurrences(of: path, with: ""))
+            print(suri)
             switch req.getMethod() {
                 case "GET":
                     if let handler = self.getHandlers[suri] {
@@ -129,6 +174,21 @@ public class RestServer {
     public func stop() {
         server.stop()
     }
+
+    private func checkPath(path: String) -> String {
+        var newPath = path
+        if newPath.last == "/" && newPath != "/" {
+            newPath.removeLast()
+        }
+        if newPath.first != "/" {
+            newPath = "/" + newPath
+        }
+        while newPath.contains("//") {
+            newPath = newPath.replacingOccurrences(of: "//", with: "/")
+        }
+        return newPath
+    }
+
 
     private func convertHTTPReqToRestReq(req: HttpRequest) -> RestRequest {
         let method = req.method
