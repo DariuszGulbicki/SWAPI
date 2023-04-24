@@ -27,6 +27,10 @@ public class RestResponse {
     public func setHeaders(headers: [String: String]) {
         self.headers = headers
     }
+
+    public func setHeader(header: String, value: String) {
+        self.headers[header] = value
+    }
     
     public func setStatusCode(statusCode: Int) {
         self.statusCode = statusCode
