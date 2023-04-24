@@ -36,7 +36,9 @@ public class RestServer {
     public init() {
         server.middleware.append { request in
             var headers = request.headers
-            headers["Server"] = self.serverHeader?
+            if (self.serverHeader != nil) {
+                headers["Server"] = self.serverHeader
+            }
             let req = self.convertHTTPReqToRestReq(req: request)
             let res = RestResponse()
             print("Request: \(req.getMethod()) \(req.getUri())")
