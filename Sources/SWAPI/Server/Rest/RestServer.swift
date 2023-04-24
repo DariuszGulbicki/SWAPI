@@ -1,10 +1,14 @@
 import Foundation
 import FoundationNetworking
+import LoggingCamp
 import Swifter
 
 public class RestServer {
     
     private var server: HttpServer = HttpServer()
+
+    private var logger: Logger? = Logger("Rest Server")
+    private var requestLogger: Logger? = Logger("Rest Request")
 
     private var serverHeader: String? = "SWAPI/1.0.0 (SWAPI API Server)"
 
@@ -33,7 +37,10 @@ public class RestServer {
         return res
     })
     
-    public init() {
+    public init(logger: Logger? = nil, requestLogger: Logger? = nil, serverHeader: String? = nil) {
+        self.serverHeader = serverHeader
+        self.logger = logger
+        self.requestLogger = requestLogger
         server.middleware.append { request in
             var headers = request.headers
             if (self.serverHeader != nil) {
@@ -95,6 +102,30 @@ public class RestServer {
                     return self.convertRestResToHTTPRes(res: self.methodNotAllowedHandler.handle(req: req, res: res))
             }
         }
+    }
+
+    public func getLogger() -> Logger? {
+        return requestLogger
+    }
+
+    public func setLogger(logger: Logger) {
+        requestLogger = logger
+    }
+
+    public func getRequestLogger() -> Logger? {
+        return requestLogger
+    }
+
+    public func setRequestLogger(logger: Logger) {
+        requestLogger = logger
+    }
+
+    public func getServerHeader() -> String? {
+        return serverHeader
+    }
+
+    public func setServerHeader(serverHeader: String) {
+        self.serverHeader = serverHeader
     }
 
     public func get(uri: String, handler: RestHandler) {
