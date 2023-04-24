@@ -6,6 +6,8 @@ public class RestServer {
     
     private var server: HttpServer = HttpServer()
 
+    private var serverHeader: String? = "SWAPI/1.0.0 (SWAPI API Server)"
+
     private var getHandlers: [String: RestHandler] = [:]
     private var postHandlers: [String: RestHandler] = [:]
     private var putHandlers: [String: RestHandler] = [:]
@@ -32,7 +34,65 @@ public class RestServer {
     })
     
     public init() {
-        
+        server.middleware.append { request in
+            var headers = request.headers
+            headers["Server"] = self.serverHeader
+            let req = self.convertHTTPReqToRestReq(req: request)
+            let res = RestResponse()
+            print("Request: \(req.getMethod()) \(req.getUri())")
+            switch req.getMethod() {
+                case "GET":
+                    if let handler = self.getHandlers[req.getUri()] {
+                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
+                    } else if let handler = self.getHandlers[String(req.getUri().dropFirst())] {
+                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
+                    } else {
+                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
+                    }
+                case "POST":
+                    if let handler = self.postHandlers[req.getUri()] {
+                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
+                    } else if let handler = self.postHandlers[String(req.getUri().dropFirst())] {
+                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
+                    } else {
+                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
+                    }
+                case "PUT":
+                    if let handler = self.putHandlers[req.getUri()] {
+                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
+                    } else if let handler = self.putHandlers[String(req.getUri().dropFirst())] {
+                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
+                    } else {
+                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
+                    }
+                case "DELETE":
+                    if let handler = self.deleteHandlers[req.getUri()] {
+                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
+                    } else if let handler = self.deleteHandlers[String(req.getUri().dropFirst())] {
+                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
+                    } else {
+                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
+                    }
+                case "PATCH":
+                    if let handler = self.patchHandlers[req.getUri()] {
+                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
+                    } else if let handler = self.patchHandlers[String(req.getUri().dropFirst())] {
+                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
+                    } else {
+                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
+                    }
+                case "HEAD":
+                    if let handler = self.headHandlers[req.getUri()] {
+                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
+                    } else if let handler = self.headHandlers[String(req.getUri().dropFirst())] {
+                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
+                    } else {
+                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
+                    }
+                default:
+                    return self.convertRestResToHTTPRes(res: self.methodNotAllowedHandler.handle(req: req, res: res))
+            }
+        }
     }
 
     public func get(uri: String, handler: RestHandler) {
@@ -74,101 +134,8 @@ public class RestServer {
     }
     
     public func start(_ port: UInt16, path: String = "") {
-        server[path] = {
-            let req = self.convertHTTPReqToRestReq(req: $0)
-            let res = RestResponse()
-            switch req.getMethod() {
-                case "GET":
-                    if let handler = self.getHandlers["/"] {
-                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
-                    } else {
-                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
-                    }
-                case "POST":
-                    if let handler = self.postHandlers["/"] {
-                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
-                    } else {
-                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
-                    }
-                case "PUT":
-                    if let handler = self.putHandlers["/"] {
-                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
-                    } else {
-                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
-                    }
-                case "DELETE":
-                    if let handler = self.deleteHandlers["/"] {
-                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
-                    } else {
-                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
-                    }
-                case "PATCH":
-                    if let handler = self.patchHandlers["/"] {
-                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
-                    } else {
-                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
-                    }
-                case "HEAD":
-                    if let handler = self.headHandlers["/"] {
-                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
-                    } else {
-                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
-                    }
-                default:
-                    return self.convertRestResToHTTPRes(res: self.methodNotAllowedHandler.handle(req: req, res: res))
-            }
-        }
-        server[path + "/:path"] = { request in
-            let req = self.convertHTTPReqToRestReq(req: request)
-            let res = RestResponse()
-            let suri: String = self.checkPath(path: req.getUri().replacingOccurrences(of: path, with: ""))
-            print(suri)
-            switch req.getMethod() {
-                case "GET":
-                    if let handler = self.getHandlers[suri] {
-                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
-                    } else {
-                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
-                    }
-                case "POST":
-                    if let handler = self.postHandlers[suri] {
-                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
-                    } else {
-                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
-                    }
-                 case "PUT":
-                    if let handler = self.putHandlers[suri] {
-                       return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
-                    } else {
-                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
-                    }
-                case "DELETE":
-                    if let handler = self.deleteHandlers[suri] {
-                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
-                    } else {
-                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
-                    }
-                case "PATCH":
-                    if let handler = self.patchHandlers[suri] {
-                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
-                    } else {
-                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
-                    }
-                case "HEAD":
-                    if let handler = self.headHandlers[suri] {
-                        return self.convertRestResToHTTPRes(res: handler.handle(req: req, res: res))
-                    } else {
-                        return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
-                    }
-                default:
-                    return self.convertRestResToHTTPRes(res: self.methodNotAllowedHandler.handle(req: req, res: res))
-            }
-        }
-        do {
-            try server.start(port) 
-        } catch {
-            print("Error starting server: \(error)")
-        }
+        try! server.start(port, forceIPv4: true)
+        RunLoop.current.run()
     }
 
     public func stop() {
