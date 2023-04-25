@@ -1,10 +1,14 @@
 import Foundation
 import FoundationNetworking
+import LoggingCamp
 import Swifter
 
 public class RestServer {
     
     private var server: HttpServer = HttpServer()
+
+    private var logger: Logger?
+    private var requestLogger: Logger?
 
     private var serverHeader: String? = "SWAPI/1.0.0 (SWAPI API Server)"
 
@@ -33,13 +37,37 @@ public class RestServer {
         return res
     })
     
-    public init() {
+    public init(logger: Logger? = Logger("Rest Server"), requestLogger: Logger? = Logger("Rest Request"), requestLogString: String = "[@method] @uri/@query_params -> @ip", serverHeader: String? = nil) {
+        self.serverHeader = serverHeader
+        self.logger = logger
+        self.requestLogger = requestLogger
+        logger?.debug("Initializing Rest Server")
+        if (self.requestLogger != nil) {
+            server.middleware.append { request in
+                // [@method] @uri/@query_params -> @ip (@headers) {@body}'
+                requestLogger?.info(requestLogString
+                .replacingOccurrences(of: "@method", with: request.method)
+                .replacingOccurrences(of: "@uri", with: request.path)
+                .replacingOccurrences(of: "@query_params", with: request.queryParams.reduce("", { (result, param) -> String in
+                    return "\(result)\(param.0)=\(param.1)&"
+                }).dropLast())
+                .replacingOccurrences(of: "@ip", with: request.address ?? "unknown")
+                .replacingOccurrences(of: "@headers", with: request.headers.reduce("", { (result, header) -> String in
+                    return "\(result)\(header.0)=\(header.1)&"
+                }).dropLast())
+                .replacingOccurrences(of: "@body", with: String(describing: request.body))
+                )
+                return nil
+            }
+        }
         server.middleware.append { request in
             var headers = request.headers
-            headers["Server"] = self.serverHeader
+            if (self.serverHeader != nil) {
+                headers["Server"] = self.serverHeader
+            }
             let req = self.convertHTTPReqToRestReq(req: request)
             let res = RestResponse()
-            print("Request: \(req.getMethod()) \(req.getUri())")
+            logger?.debug("Handling \(request.method) request for \(req.getUri())")
             switch req.getMethod() {
                 case "GET":
                     if let handler = self.getHandlers[req.getUri()] {
@@ -90,9 +118,35 @@ public class RestServer {
                         return self.convertRestResToHTTPRes(res: self.notFoundHandler.handle(req: req, res: res))
                     }
                 default:
+                    requestLogger?.warn("Method \(req.getMethod()) that is not allowed was used by remote")
                     return self.convertRestResToHTTPRes(res: self.methodNotAllowedHandler.handle(req: req, res: res))
             }
         }
+        logger?.debug("Rest Server initialized")
+    }
+
+    public func getLogger() -> Logger? {
+        return requestLogger
+    }
+
+    public func setLogger(logger: Logger) {
+        requestLogger = logger
+    }
+
+    public func getRequestLogger() -> Logger? {
+        return requestLogger
+    }
+
+    public func setRequestLogger(logger: Logger) {
+        requestLogger = logger
+    }
+
+    public func getServerHeader() -> String? {
+        return serverHeader
+    }
+
+    public func setServerHeader(serverHeader: String) {
+        self.serverHeader = serverHeader
     }
 
     public func get(uri: String, handler: RestHandler) {
@@ -134,12 +188,16 @@ public class RestServer {
     }
     
     public func start(_ port: UInt16, path: String = "") {
+        logger?.debug("Starting Rest Server on port \(port)")
         try! server.start(port, forceIPv4: true)
+        logger?.debug("Rest Server started. Running loop")
         RunLoop.current.run()
     }
 
     public func stop() {
+        logger?.debug("Stopping Rest Server")
         server.stop()
+        logger?.debug("Rest Server stopped")
     }
 
     private func checkPath(path: String) -> String {
@@ -153,11 +211,13 @@ public class RestServer {
         while newPath.contains("//") {
             newPath = newPath.replacingOccurrences(of: "//", with: "/")
         }
+        logger?.debug("Path \(path) converted to \(newPath)")
         return newPath
     }
 
 
     private func convertHTTPReqToRestReq(req: HttpRequest) -> RestRequest {
+        logger?.debug("Converting HTTP request for path \(req.path) into RestRequest")
         let method = req.method
         let headers = req.headers
         let body = req.body
@@ -169,13 +229,16 @@ public class RestServer {
         restReq.setMethod(method: method)
         restReq.setParameters(parameters: parameters)
         restReq.setUri(uri: req.path)
+        logger?.debug("Converted HTTP request into RestRequest")
         return restReq
     }
 
     private func convertRestResToHTTPRes(res: RestResponse) -> HttpResponse {
+        logger?.debug("Converting RestResponse with code \(res.getStatusCode()) into HTTPResponse")
         let body = res.getBody()
         let statusCode = res.getStatusCode()
         let headers = res.getHeaders()
+        logger?.debug("Converted RestResponse into HTTPResponse. Server will attempt write...")
         return .raw(statusCode, body, headers, { writer in
             try writer.write(Array(body.utf8))
         })

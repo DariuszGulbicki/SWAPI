@@ -2,6 +2,24 @@
   "object": {
     "pins": [
       {
+        "package": "Colorizer",
+        "repositoryURL": "https://github.com/DariuszGulbicki/Colorizer",
+        "state": {
+          "branch": null,
+          "revision": "8e9747fc55861a2969c721967f4a84b95ae5f716",
+          "version": "1.2.0"
+        }
+      },
+      {
+        "package": "LoggingCamp",
+        "repositoryURL": "https://github.com/DariuszGulbicki/logging-camp.git",
+        "state": {
+          "branch": null,
+          "revision": "c80b86ecfde4c381996cd6476cc653358341741e",
+          "version": "1.0.0"
+        }
+      },
+      {
         "package": "Swifter",
         "repositoryURL": "https://github.com/httpswift/swifter.git",
         "state": {

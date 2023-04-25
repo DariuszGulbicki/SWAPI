@@ -9,9 +9,7 @@ public class RestMethodHandler: RestHandler {
     public func handle(req: RestRequest, res: RestResponse) -> RestResponse {
         let res = method(req, res)
         if (!res.getHeaders().keys.contains("Server")) {
-            var headers = res.getHeaders()
-            headers["Server"] = "SWAPI 1.0"
-            res.setHeaders(headers: headers)
+            res.setHeader(header: "Server", value: "SWAPI/1.0.0 (SWAPI API Server)")
         }
         return method(req, res)
     }

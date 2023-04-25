@@ -1,8 +1,11 @@
 import Foundation
 import FoundationNetworking
+import LoggingCamp
 
 public class RestQuarry {
     
+    private var logger: Logger?
+
     private var baseURL: String
     private var baseURI: String = ""
     private var baseHeaders: [String: String] = [:]
@@ -33,33 +36,38 @@ public class RestQuarry {
         return self.baseHeaders
     }
 
+    public func setLogger(logger: Logger?) {
+        self.logger = logger
+    }
+
+    public func getLogger() -> Logger? {
+        return self.logger
+    }
+
     // Constructors
-    
-    init(baseURL: String) {
-        self.baseURL = baseURL
-    }
 
-    init(baseURL: String, baseURI: String) {
-        self.baseURL = baseURL
-        self.baseURI = baseURI
-    }
-
-    init(baseURL: String, baseURI: String, baseHeaders: [String: String]) {
+    public init(baseURL: String, baseURI: String = "", baseHeaders: [String: String] = [:], logger: Logger = Logger("RestQuarry")) {
         self.baseURL = baseURL
         self.baseURI = baseURI
         self.baseHeaders = baseHeaders
+        self.logger = logger
     }
 
     // Public Methods
     
     public func query(request: RestQuarryRequest, timeout: TimeInterval = 10) -> RestQuarryResponse {
+        logger?.debug("Querying \(self.getURL(request: request)):")
+        logger?.debug("[QUERY] Initializning response object")
         let response: RestQuarryResponse = RestQuarryResponse();
+        logger?.debug("[QUERY] Initializing URL request")
         let url: URL = URL(string: self.getURL(request: request))!
         var urlRequest: URLRequest = URLRequest(url: url)
+        logger?.debug("[QUERY] Setting request parameters")
         urlRequest.timeoutInterval = timeout
         urlRequest.httpMethod = request.getMethod()
         urlRequest.allHTTPHeaderFields = self.getHeaders(request: request)
         urlRequest.httpBody = request.getBody().data(using: .utf8)
+        logger?.debug("[QUERY] Creating semaphore and task")
         let semaphore: DispatchSemaphore = DispatchSemaphore(value: 0)
         let task: URLSessionDataTask = URLSession.shared.dataTask(with: urlRequest) { data, urlResponse, error in
             if let error: Error = error {
@@ -76,8 +84,17 @@ public class RestQuarry {
             }
             semaphore.signal()
         }
+        logger?.debug("[QUERY] Sending request")
         task.resume()
         semaphore.wait()
+        let responseStatus: Int = response.getStatus()
+        if responseStatus >= 400 && responseStatus < 500 {
+            logger?.warn("[QUERY] Remote responded with user error \(responseStatus). Make sure that provided URI, body, parameters and/or authentication is correct")
+        } else if responseStatus >= 500 {
+            logger?.warn("[QUERY] Remote responded with server error \(responseStatus). Make sure that your request is correct and that the remote server is up and running")
+        } else {
+            logger?.debug("[QUERY] Request completed. Remote returned \(responseStatus)")
+        }
         return response;
     }
 
