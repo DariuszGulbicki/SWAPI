@@ -25,7 +25,7 @@ public class RestQuarryRequestBuilder {
         return self
     }
 
-    public func addParameter(_ key: String, _ value: String) -> RestQuarryRequestBuilder {
+    public func parameter(_ key: String, _ value: String) -> RestQuarryRequestBuilder {
         self.parameters[key] = value
         return self
     }
@@ -35,7 +35,7 @@ public class RestQuarryRequestBuilder {
         return self
     }
 
-    public func addHeader(_ key: String, _ value: String) -> RestQuarryRequestBuilder {
+    public func header(_ key: String, _ value: String) -> RestQuarryRequestBuilder {
         self.headers[key] = value
         return self
     }
