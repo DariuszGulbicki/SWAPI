@@ -10,6 +10,8 @@ public class RestQuarry {
     private var baseURI: String = ""
     private var baseHeaders: [String: String] = [:]
 
+    private let clearEmptySlashes: Bool
+
     // Getters and Setters
 
     public func setBaseURL(baseURL: String) {
@@ -46,21 +48,28 @@ public class RestQuarry {
 
     // Constructors
 
-    public init(baseURL: String, baseURI: String = "", baseHeaders: [String: String] = [:], logger: Logger = Logger("RestQuarry")) {
+    public init(baseURL: String, clearEmptySlashes: Bool = true, baseURI: String = "", baseHeaders: [String: String] = [:], logger: Logger = Logger("Rest Quarry")) {
         self.baseURL = baseURL
         self.baseURI = baseURI
         self.baseHeaders = baseHeaders
         self.logger = logger
+        self.clearEmptySlashes = clearEmptySlashes
     }
 
     // Public Methods
     
     public func query(request: RestQuarryRequest, timeout: TimeInterval = 10) -> RestQuarryResponse {
-        logger?.debug("Querying \(self.getURL(request: request)):")
+        let requestUrl: String
+        if clearEmptySlashes {
+            requestUrl = clearAllEmptySlashes(self.getURL(request: request))
+        } else {
+            requestUrl = self.getURL(request: request)
+        }
+        logger?.debug("Querying \(requestUrl):")
         logger?.debug("[QUERY] Initializning response object")
         let response: RestQuarryResponse = RestQuarryResponse();
         logger?.debug("[QUERY] Initializing URL request")
-        let url: URL = URL(string: self.getURL(request: request))!
+        let url: URL = URL(string: requestUrl)!
         var urlRequest: URLRequest = URLRequest(url: url)
         logger?.debug("[QUERY] Setting request parameters")
         urlRequest.timeoutInterval = timeout
@@ -146,7 +155,7 @@ public class RestQuarry {
         if text.last == "/" {
             return ensureOneTrailingSlash(text: text)
         }
-        return ensureOneTrailingSlash(text: text + "/")
+        return text + "/"
     }
 
     private func ensureOneTrailingSlash(text: String) -> String {
@@ -155,6 +164,25 @@ public class RestQuarry {
             temp = String(text.dropLast())
         }
         return temp
+    }
+
+    private func clearAllEmptySlashes(_ text: String) -> String {
+        var protocolSlashes = ""
+        var urlWithoutProtocol = ""
+        let splitUrl = text.split(separator: "://")
+        if splitUrl.count == 2 {
+            protocolSlashes = String(splitUrl[0]) + "://"
+            urlWithoutProtocol = String(splitUrl[1])
+        } else if (splitUrl.count == 1) {
+            urlWithoutProtocol = String(splitUrl[0])
+        } else {
+            logger?.error("URL contains more than one protocol slashes. Check Quarry and QuarryRequest for malformed URLs")
+            return text
+        }
+        while urlWithoutProtocol.contains("//") {
+            urlWithoutProtocol = urlWithoutProtocol.replacingOccurrences(of: "//", with: "/")
+        }
+        return protocolSlashes + urlWithoutProtocol
     }
 
 }

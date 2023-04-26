@@ -3,7 +3,7 @@ import Foundation
 public class RestRequest {
     
     private var method: String = "GET"
-    private var uri: String = "/"
+    private var uri: String = ""
     private var parameters: [(String, String)] = []
     private var headers: [String: String] = [:]
     private var body: String = ""
