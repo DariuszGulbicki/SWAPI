@@ -127,6 +127,23 @@ public class RestQuarry {
         return temp
     }
 
+    public func mine(_ alias: String, namedPlaceholders: [String:String], unnamedPlaceholders: [String]) -> RestQuarryResponse {
+        if let miner: RestQuarryMiner = self.miners[alias] {
+            return query(request: miner.toRequest(namedPlaceholders: namedPlaceholders, unnamedPlaceholders: unnamedPlaceholders))
+        } else {
+            logger?.error("No miner with alias \(alias) found")
+            return RestQuarryResponse()
+        }
+    }
+
+    public func mine(_ alias: String, _ namedPlaceholders: [String:String]) -> RestQuarryResponse {
+        return mine(alias, namedPlaceholders: namedPlaceholders, unnamedPlaceholders: [])
+    }
+
+    public func mine(_ alias: String, _ unnamedPlaceholders: [String]) -> RestQuarryResponse {
+        return mine(alias, namedPlaceholders: [:], unnamedPlaceholders: unnamedPlaceholders)
+    }
+
     public func printURL(request: RestQuarryRequest) {
         print(self.getURL(request: request))
     }

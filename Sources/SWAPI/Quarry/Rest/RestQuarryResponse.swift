@@ -2,7 +2,7 @@ import Foundation
 
 public class RestQuarryResponse {
 
-    private var status: Int = 500;
+    private var status: Int = 400;
     private var headers: [String: String] = [:];
     private var body: String = "";
     private var error: Error? = nil;
