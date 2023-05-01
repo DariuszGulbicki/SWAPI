@@ -2,12 +2,26 @@ public class RestQuarryMiner {
 
     private var compiledUri: String = "";
     private var completedHeaders: [String: String] = [:]
+    private var completedBody: String = ""
     private var defaultNamedPlaceholders: [String: String] = [:]
     private var defaultUnnamedPlaceholders: [String] = []
+
+    private let method: String
 
     public init(_ request: RestQuarryRequest, clearEmptySlashes: Bool = true, defaultNamedPlaceholders: [String: String] = [:], defaultUnnamedPlaceholders: [String] = []) {
         self.completedHeaders = self.buildHeaders(request: request)
         self.compiledUri = self.buildUri(request: request, clearEmptySlashes: clearEmptySlashes)
+        self.completedBody = request.getBody()
+        self.method = request.getMethod()
+        self.defaultNamedPlaceholders = defaultNamedPlaceholders
+        self.defaultUnnamedPlaceholders = defaultUnnamedPlaceholders
+    }
+
+    public init(method: String, uri: String, headers: [String: String] = [:], body: String = "", clearEmptySlashes: Bool = true, defaultNamedPlaceholders: [String: String] = [:], defaultUnnamedPlaceholders: [String] = []) {
+        self.completedHeaders = headers
+        self.compiledUri = uri
+        self.completedBody = body
+        self.method = method
         self.defaultNamedPlaceholders = defaultNamedPlaceholders
         self.defaultUnnamedPlaceholders = defaultUnnamedPlaceholders
     }
@@ -124,6 +138,27 @@ public class RestQuarryMiner {
 
     public func getUri(_ unnamedPlaceholders: String...) -> String {
         return getUri(unnamedPlaceholders: unnamedPlaceholders)
+    }
+
+    public func getBody(namedPlaceholders: [String:String]? = nil, unnamedPlaceholders: [String]? = nil) -> String {
+        return replacePlaceholders(text: self.completedBody, unnamedValues: unnamedPlaceholders, namedValues: namedPlaceholders)
+    }
+
+    public func getBody(_ namedPlaceholders: (String, String)...) -> String {
+        return getBody(namedPlaceholders: Dictionary(uniqueKeysWithValues: namedPlaceholders))
+    }
+
+    public func getBody(_ unnamedPlaceholders: String...) -> String {
+        return getBody(unnamedPlaceholders: unnamedPlaceholders)
+    }
+
+    public func toRequest(namedPlaceholders: [String:String]? = nil, unnamedPlaceholders: [String]? = nil) -> RestQuarryRequest {
+        return RestQuarryRequest(
+            method: "GET",
+            body: getBody(namedPlaceholders: namedPlaceholders, unnamedPlaceholders: unnamedPlaceholders),
+            uri: getUri(namedPlaceholders: namedPlaceholders, unnamedPlaceholders: unnamedPlaceholders),
+            headers: getHeaders(namedPlaceholders: namedPlaceholders, unnamedPlaceholders: unnamedPlaceholders)
+        )
     }
 
 }
