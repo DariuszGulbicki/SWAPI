@@ -1,9 +1,86 @@
 import Foundation
 import FoundationNetworking
 import LoggingCamp
+import SwiftyXMLParser
 
 public class RestQuarry {
     
+    public static func loadQuarryFile(file: String, logger: Logger? = Logger("Rest Quarry file loader")) -> RestQuarry {
+        logger?.debug("Loading quarry file: \(file)")
+        logger?.debug("Loading file contents...")
+        let data: Data = try! Data(contentsOf: URL(fileURLWithPath: file))
+        logger?.debug("Parsing XML data...")
+        let xml = XML.parse(data)
+        logger?.debug("Parsing quarry defaults...")
+        let quarryMethod = xml["RestQuarry", "method"].text ?? "GET"
+        logger?.debug("Determined quarry method: \(quarryMethod)")
+        let quarryBaseURL = xml["RestQuarry", "url"].text!
+        logger?.debug("Determined quarry base URL: \(quarryBaseURL)")
+        let quarryBaseURI = xml["RestQuarry", "uri"].text ?? ""
+        logger?.debug("Determined quarry base URI: \(quarryBaseURI)")
+        let quarryClearEmptySlashes = xml["RestQuarry", "clearEmptySlashes"].text ?? "true"
+        logger?.debug("Determined quarry clear empty slashes: \(quarryClearEmptySlashes)")
+        let quarryBaseHeaders = xml["RestQuarry", "headers", "header"].reduce(into: [String: String]()) { (result, header) in
+            result[header["name"].text!] = header["value"].text!
+        }
+        logger?.debug("Determined quarry base headers: \(quarryBaseHeaders)")
+        logger?.debug("Creating quarry object...")
+        let quarry = RestQuarry(baseURL: quarryBaseURL, clearEmptySlashes: quarryClearEmptySlashes != "false", baseURI: quarryBaseURI, baseHeaders: quarryBaseHeaders)
+        logger?.debug("Parsing endpoints...")
+        print("method: \(quarryMethod), url: \(quarryBaseURL), uri: \(quarryBaseURI), clearEmptySlashes: \(quarryClearEmptySlashes), headers: \(quarryBaseHeaders)")
+        var endpoints: [String:RestQuarryMiner] = [:]
+        for endpoint in xml["RestQuarry", "endpoints", "endpoint"] {
+            let endpointName = endpoint.attributes["name"]!
+            logger?.debug("Parsing endpoint: \(endpointName)")
+            let endpointMethod = endpoint["method"].text ?? quarryMethod
+            logger?.debug("Determined \(endpointName) endpoint method: \(endpointMethod)")
+            let endpointURI = endpoint["uri"].text ?? quarryBaseURI
+            logger?.debug("Determined \(endpointName) endpoint URI: \(endpointURI)")
+            let endpointBody = endpoint["body"].text ?? ""
+            logger?.debug("Determined \(endpointName) endpoint body: \(endpointBody)")
+            let endpointClearEmptySlashes = endpoint["clearEmptySlashes"].text ?? quarryClearEmptySlashes
+            logger?.debug("Determined \(endpointName) endpoint clear empty slashes: \(endpointClearEmptySlashes)")
+            let endpointHeaders = endpoint["headers", "header"].reduce(into: [String: String]()) { (result, header) in
+                result[header["name"].text!] = header["value"].text!
+            }
+            logger?.debug("Determined \(endpointName) endpoint headers: \(endpointHeaders)")
+            let endpointParameters = endpoint["params", "param"].reduce(into: [String: String]()) { (result, param) in
+                if let name = param["name"].text {
+                    result[name] = param["value"].text ?? ""
+                } else {
+                    logger?.error("Unnamed parameter in \(endpointName) endpoint")
+                }
+            }
+            logger?.debug("Determined \(endpointName) endpoint parameters: \(endpointParameters)")
+            let endpointDefaultNamedValues = endpoint["defaultValues", "named"].reduce(into: [String: String]()) { (result, named) in
+                if let name = named.attributes["name"] {
+                    result[name] = named.text!
+                } else {
+                    logger?.error("Unnamed default named value in \(endpointName) endpoint")
+                }
+            }
+            logger?.debug("Determined \(endpointName) endpoint default unnamed values: \(endpointDefaultNamedValues)")
+            let endpointDefaultUnnamedValues = endpoint["defaultValues", "unnamed"].reduce(into: [String]()) { (result, unnamed) in
+                result.append(unnamed.text!)
+            }
+            logger?.debug("Determined \(endpointName) endpoint default unnamed values: \(endpointDefaultUnnamedValues)")
+            logger?.debug("Creating initial request for \(endpointName) endpoint...")
+            let initialRequest = RestQuarryRequest(method: endpointMethod, uri: endpointURI, headers: endpointHeaders, body: endpointBody, parameters: endpointParameters)
+            logger?.debug("Creating miner for \(endpointName) endpoint...")
+            let miner = RestQuarryMiner(initialRequest, clearEmptySlashes: endpointClearEmptySlashes != "false", defaultNamedPlaceholders: endpointDefaultNamedValues, defaultUnnamedPlaceholders: endpointDefaultUnnamedValues)
+            logger?.debug("Created miner for \(endpointName) endpoint. Appending to endpoints...")
+            endpoints[endpointName] = miner
+        }
+        logger?.debug("All endpoints parsed. Appending to quarry...")
+        quarry.miners = endpoints
+        logger?.debug("Quarry file loaded.")
+        return quarry
+    }
+
+    public static func loadQuarryFile(relativeFile: String, logger: Logger? = Logger("Rest Quarry file loader")) -> RestQuarry {
+        return loadQuarryFile(file: FileManager.default.currentDirectoryPath + "/" + relativeFile, logger: logger)
+    }
+
     private var logger: Logger?
 
     private var miners: [String:RestQuarryMiner] = [:]
@@ -127,7 +204,7 @@ public class RestQuarry {
         return temp
     }
 
-    public func mine(_ alias: String, namedPlaceholders: [String:String], unnamedPlaceholders: [String]) -> RestQuarryResponse {
+    public func mine(_ alias: String, namedPlaceholders: [String:String] = [:], unnamedPlaceholders: [String] = []) -> RestQuarryResponse {
         logger?.debug("Mining \(alias):")
         logger?.debug("[MINE] Searching for miner")
         if let miner: RestQuarryMiner = self.miners[alias] {
