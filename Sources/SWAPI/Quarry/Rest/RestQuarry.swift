@@ -6,6 +6,8 @@ public class RestQuarry {
     
     private var logger: Logger?
 
+    private var miners: [RestQuarryMiner] = []
+
     private var baseURL: String
     private var baseURI: String = ""
     private var baseHeaders: [String: String] = [:]
@@ -105,6 +107,24 @@ public class RestQuarry {
             logger?.debug("[QUERY] Request completed. Remote returned \(responseStatus)")
         }
         return response;
+    }
+
+    public func addMiner(_ miners: RestQuarryMiner...) {
+        self.miners.append(contentsOf: miners)
+    }
+
+    public func removeMiner(miner: RestQuarryMiner) {
+        self.miners.removeAll(where: { $0 === miner })
+    }
+
+    public func getMiners() -> [RestQuarryMiner] {
+        return self.miners
+    }
+
+    public func addMinerDirectly(_ miners: RestQuarryMiner...) -> RestQuarry {
+        var temp = self
+        temp.addMiner(miners)
+        return temp
     }
 
     public func printURL(request: RestQuarryRequest) {
