@@ -6,7 +6,7 @@ public class RestQuarry {
     
     private var logger: Logger?
 
-    private var miners: [RestQuarryMiner] = []
+    private var miners: [String:RestQuarryMiner] = [:]
 
     private var baseURL: String
     private var baseURI: String = ""
@@ -109,21 +109,21 @@ public class RestQuarry {
         return response;
     }
 
-    public func addMiner(_ miners: RestQuarryMiner...) {
-        self.miners.append(contentsOf: miners)
+    public func addMiner(_ alias: String, _ miner: RestQuarryMiner) {
+        self.miners[alias] = miner
     }
 
-    public func removeMiner(miner: RestQuarryMiner) {
-        self.miners.removeAll(where: { $0 === miner })
+    public func removeMiner(_ alias: String) {
+        self.miners.removeValue(forKey: alias)
     }
 
-    public func getMiners() -> [RestQuarryMiner] {
+    public func getMiners() -> [String:RestQuarryMiner] {
         return self.miners
     }
 
-    public func addMinerDirectly(_ miners: RestQuarryMiner...) -> RestQuarry {
-        var temp = self
-        temp.addMiner(miners)
+    public func addMinerDirectly(_ alias: String, miner: RestQuarryMiner) -> RestQuarry {
+        let temp = self
+        temp.addMiner(alias, miner)
         return temp
     }
 
