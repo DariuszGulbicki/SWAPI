@@ -98,19 +98,31 @@ public class RestQuarryMiner {
         return protocolSlashes + urlWithoutProtocol
     }
 
-    public func getHeaders() -> [String: String] {
-        return self.completedHeaders
+    public func getHeaders(namedPlaceholders: [String:String]? = nil, unnamedPlaceholders: [String]? = nil) -> [String: String] {
+        var temp = self.completedHeaders
+        for (key, value) in namedPlaceholders ?? [:] {
+            temp[key] = replacePlaceholders(text: value, unnamedValues: unnamedPlaceholders, namedValues: namedPlaceholders)
+        }
+        return temp
+    }
+
+    public func getHeaders(_ namedPlaceholders: (String, String)...) -> [String: String] {
+        return getHeaders(namedPlaceholders: Dictionary(uniqueKeysWithValues: namedPlaceholders))
+    }
+
+    public func getHeaders(_ unnamedPlaceholders: String...) -> [String: String] {
+        return getHeaders(unnamedPlaceholders: unnamedPlaceholders)
     }
 
     public func getUri(namedPlaceholders: [String:String]? = nil, unnamedPlaceholders: [String]? = nil) -> String {
         return replacePlaceholders(text: self.compiledUri, unnamedValues: unnamedPlaceholders, namedValues: namedPlaceholders)
     }
 
-    public func getUri(namedPlaceholders: (String, String)...) -> String {
+    public func getUri(_ namedPlaceholders: (String, String)...) -> String {
         return getUri(namedPlaceholders: Dictionary(uniqueKeysWithValues: namedPlaceholders))
     }
 
-    public func getUri(unnamedPlaceholders: String...) -> String {
+    public func getUri(_ unnamedPlaceholders: String...) -> String {
         return getUri(unnamedPlaceholders: unnamedPlaceholders)
     }
 
