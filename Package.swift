@@ -25,7 +25,8 @@ let package = Package(
             name: "SWAPI",
             dependencies: [
                 .product(name: "Swifter", package: "swifter"),
-                .product(name: "LoggingCamp", package: "logging-camp")
+                .product(name: "LoggingCamp", package: "logging-camp"),
+                .product(name: "SwiftyXMLParser", package: "SwiftyXMLParser")
                 ]),
     ]
 )
