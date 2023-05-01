@@ -9,10 +9,10 @@ public class RestQuarryMiner {
     private let method: String
 
     public init(_ request: RestQuarryRequest, clearEmptySlashes: Bool = true, defaultNamedPlaceholders: [String: String] = [:], defaultUnnamedPlaceholders: [String] = []) {
+        self.method = request.getMethod()
         self.completedHeaders = self.buildHeaders(request: request)
         self.compiledUri = self.buildUri(request: request, clearEmptySlashes: clearEmptySlashes)
         self.completedBody = request.getBody()
-        self.method = request.getMethod()
         self.defaultNamedPlaceholders = defaultNamedPlaceholders
         self.defaultUnnamedPlaceholders = defaultUnnamedPlaceholders
     }
@@ -155,9 +155,9 @@ public class RestQuarryMiner {
     public func toRequest(namedPlaceholders: [String:String]? = nil, unnamedPlaceholders: [String]? = nil) -> RestQuarryRequest {
         return RestQuarryRequest(
             method: "GET",
-            body: getBody(namedPlaceholders: namedPlaceholders, unnamedPlaceholders: unnamedPlaceholders),
             uri: getUri(namedPlaceholders: namedPlaceholders, unnamedPlaceholders: unnamedPlaceholders),
-            headers: getHeaders(namedPlaceholders: namedPlaceholders, unnamedPlaceholders: unnamedPlaceholders)
+            headers: getHeaders(namedPlaceholders: namedPlaceholders, unnamedPlaceholders: unnamedPlaceholders),
+            body: getBody(namedPlaceholders: namedPlaceholders, unnamedPlaceholders: unnamedPlaceholders)
         )
     }
 
