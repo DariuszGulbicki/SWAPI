@@ -128,7 +128,12 @@ public class RestQuarry {
     }
 
     public func mine(_ alias: String, namedPlaceholders: [String:String], unnamedPlaceholders: [String]) -> RestQuarryResponse {
+        logger?.debug("Mining \(alias):")
+        logger?.debug("[MINE] Searching for miner")
         if let miner: RestQuarryMiner = self.miners[alias] {
+            logger?.debug("[MINE] Miner found")
+            logger?.debug("[MINE] Creating request with named placeholders \(namedPlaceholders) and unnamed placeholders \(unnamedPlaceholders)")
+            logger?.debug("[MINE] Passing request to query...")
             return query(request: miner.toRequest(namedPlaceholders: namedPlaceholders, unnamedPlaceholders: unnamedPlaceholders))
         } else {
             logger?.error("No miner with alias \(alias) found")
