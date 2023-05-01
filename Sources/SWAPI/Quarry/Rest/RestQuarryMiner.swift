@@ -161,4 +161,12 @@ public class RestQuarryMiner {
         )
     }
 
+    public func toRequest(_ namedPlaceholders: (String, String)...) -> RestQuarryRequest {
+        return toRequest(namedPlaceholders: Dictionary(uniqueKeysWithValues: namedPlaceholders))
+    }
+
+    public func toRequest(_ unnamedPlaceholders: String...) -> RestQuarryRequest {
+        return toRequest(unnamedPlaceholders: unnamedPlaceholders)
+    }
+
 }
