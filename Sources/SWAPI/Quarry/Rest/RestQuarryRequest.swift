@@ -10,6 +10,21 @@ public class RestQuarryRequest {
 
     }
 
+    public init(method: String, uri: String, headers: [String: String], body: String, parameters: [String: String]) {
+        self.method = method
+        self.uri = uri
+        self.headers = headers
+        self.body = body
+        self.parameters = parameters
+    }
+
+    public init(method: String, uri: String, headers: [String: String], body: String) {
+        self.method = method
+        self.uri = uri
+        self.headers = headers
+        self.body = body
+    }
+
     public func setMethod(method: String) {
         self.method = method
     }

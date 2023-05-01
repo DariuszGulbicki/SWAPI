@@ -6,6 +6,8 @@ public class RestQuarry {
     
     private var logger: Logger?
 
+    private var miners: [String:RestQuarryMiner] = [:]
+
     private var baseURL: String
     private var baseURI: String = ""
     private var baseHeaders: [String: String] = [:]
@@ -105,6 +107,46 @@ public class RestQuarry {
             logger?.debug("[QUERY] Request completed. Remote returned \(responseStatus)")
         }
         return response;
+    }
+
+    public func addMiner(_ alias: String, _ miner: RestQuarryMiner) {
+        self.miners[alias] = miner
+    }
+
+    public func removeMiner(_ alias: String) {
+        self.miners.removeValue(forKey: alias)
+    }
+
+    public func getMiners() -> [String:RestQuarryMiner] {
+        return self.miners
+    }
+
+    public func addMinerDirectly(_ alias: String, miner: RestQuarryMiner) -> RestQuarry {
+        let temp = self
+        temp.addMiner(alias, miner)
+        return temp
+    }
+
+    public func mine(_ alias: String, namedPlaceholders: [String:String], unnamedPlaceholders: [String]) -> RestQuarryResponse {
+        logger?.debug("Mining \(alias):")
+        logger?.debug("[MINE] Searching for miner")
+        if let miner: RestQuarryMiner = self.miners[alias] {
+            logger?.debug("[MINE] Miner found")
+            logger?.debug("[MINE] Creating request with named placeholders \(namedPlaceholders) and unnamed placeholders \(unnamedPlaceholders)")
+            logger?.debug("[MINE] Passing request to query...")
+            return query(request: miner.toRequest(namedPlaceholders: namedPlaceholders, unnamedPlaceholders: unnamedPlaceholders))
+        } else {
+            logger?.error("No miner with alias \(alias) found")
+            return RestQuarryResponse()
+        }
+    }
+
+    public func mine(_ alias: String, _ namedPlaceholders: [String:String]) -> RestQuarryResponse {
+        return mine(alias, namedPlaceholders: namedPlaceholders, unnamedPlaceholders: [])
+    }
+
+    public func mine(_ alias: String, _ unnamedPlaceholders: [String]) -> RestQuarryResponse {
+        return mine(alias, namedPlaceholders: [:], unnamedPlaceholders: unnamedPlaceholders)
     }
 
     public func printURL(request: RestQuarryRequest) {
