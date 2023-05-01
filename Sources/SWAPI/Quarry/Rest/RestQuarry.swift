@@ -5,7 +5,11 @@ import SwiftyXMLParser
 
 public class RestQuarry {
     
-    public static func loadQuarryFile(file: String, logger: Logger? = Logger("Rest Quarry file loader")) -> RestQuarry {
+    public static func loadQuarryFile(file: String, logger: Logger? = Logger("Rest Quarry file loader")) -> RestQuarry? {
+        if (!FileManager.default.fileExists(atPath: file)) {
+            logger?.error("Quarry file \(file) does not exist!")
+            return nil
+        }
         logger?.debug("Loading quarry file: \(file)")
         logger?.debug("Loading file contents...")
         let data: Data = try! Data(contentsOf: URL(fileURLWithPath: file))
@@ -77,8 +81,28 @@ public class RestQuarry {
         return quarry
     }
 
-    public static func loadQuarryFile(relativeFile: String, logger: Logger? = Logger("Rest Quarry file loader")) -> RestQuarry {
+    public static func loadQuarryFile(relativeFile: String, logger: Logger? = Logger("Rest Quarry file loader")) -> RestQuarry? {
         return loadQuarryFile(file: FileManager.default.currentDirectoryPath + "/" + relativeFile, logger: logger)
+    }
+
+    public static func load(_ name: String, logger: Logger = Logger("Rest Quarry file loader")) -> RestQuarry? {
+        let currentDirectoryPath = FileManager.default.currentDirectoryPath + "/"
+        let quarryPath = currentDirectoryPath + "quarry/\(name).quarry"
+        let quarryXMLPath = currentDirectoryPath + "quarry/\(name).quarry.xml"
+        let xmlPath = currentDirectoryPath + "quarry/\(name).xml"
+        if FileManager.default.fileExists(atPath: quarryPath) {
+            logger.debug("Loading quarry file \(quarryPath)")
+            return loadQuarryFile(file: quarryPath, logger: logger)
+        } else if FileManager.default.fileExists(atPath: quarryXMLPath) {
+            logger.debug("Loading quarry file \(quarryXMLPath)")
+            return loadQuarryFile(file: quarryXMLPath, logger: logger)
+        } else if FileManager.default.fileExists(atPath: xmlPath) {
+            logger.debug("Loading quarry file \(xmlPath)")
+            return loadQuarryFile(file: xmlPath, logger: logger)
+        } else {
+            logger.error("Could not find quarry file \(quarryPath), \(quarryXMLPath), or \(xmlPath)")
+            return nil
+        }
     }
 
     private var logger: Logger?
