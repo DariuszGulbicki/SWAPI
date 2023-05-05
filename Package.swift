@@ -14,6 +14,9 @@ let package = Package(
         .library(
             name: "SWAPI",
             targets: ["SWAPI"]),
+        .library(
+            name: "Rest",
+            targets: ["Rest"])
     ],
     dependencies: [
         .package(url: "https://github.com/httpswift/swifter.git", .upToNextMajor(from: "1.5.0")),
@@ -28,5 +31,13 @@ let package = Package(
                 .product(name: "LoggingCamp", package: "logging-camp"),
                 .product(name: "SwiftyXMLParser", package: "SwiftyXMLParser")
                 ]),
+        .target(
+            name: "Rest",
+            dependencies: [
+                .product(name: "Swifter", package: "swifter"),
+                .product(name: "LoggingCamp", package: "logging-camp"),
+                .product(name: "SwiftyXMLParser", package: "SwiftyXMLParser")
+                ],
+            path: "Sources/SWAPI/Rest"),
     ]
 )
