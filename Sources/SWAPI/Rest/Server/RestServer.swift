@@ -3,6 +3,23 @@ import FoundationNetworking
 import LoggingCamp
 import Swifter
 
+precedencegroup SecondaryTernaryPrecedence {
+    associativity: right
+    higherThan: TernaryPrecedence
+    lowerThan: LogicalDisjunctionPrecedence
+}
+
+
+infix operator +: AdditionPrecedence
+infix operator +=: AdditionPrecedence
+infix operator <=: AdditionPrecedence
+infix operator *: AdditionPrecedence
+
+postfix operator *
+
+infix operator <: SecondaryTernaryPrecedence
+infix operator ><: TernaryPrecedence
+
 public class RestServer {
     
     private var server: HttpServer = HttpServer()
@@ -317,5 +334,9 @@ public class RestServer {
             try writer.write(Array(body.utf8))
         })
     }
+
+    // Operators
+
+    
     
 }
