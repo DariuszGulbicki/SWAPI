@@ -3,6 +3,8 @@ import FoundationNetworking
 import LoggingCamp
 import SwiftyXMLParser
 
+infix operator <->: AssignmentPrecedence
+
 public class RestQuarry {
     
     public static func loadQuarryFile(file: String, logger: Logger? = Logger("Rest Quarry file loader")) -> RestQuarry? {
@@ -326,6 +328,68 @@ public class RestQuarry {
             urlWithoutProtocol = urlWithoutProtocol.replacingOccurrences(of: "//", with: "/")
         }
         return protocolSlashes + urlWithoutProtocol
+    }
+
+    // Operators
+
+    public static func += (left: inout RestQuarry, right: (String, RestQuarryMiner)) {
+        left.addMiner(right.0, right.1)
+    }
+
+    public static func -= (left: inout RestQuarry, right: String) {
+        left.removeMiner(right)
+    }
+
+    public static func + (left: RestQuarry, right: (String, RestQuarryMiner)) -> RestQuarry {
+        return left.addMinerDirectly(right.0, miner: right.1)
+    }
+
+    public static func + (left: (String, RestQuarryMiner), right: RestQuarry) -> RestQuarry {
+        return right.addMinerDirectly(left.0, miner: left.1)
+    }
+
+    public static func + (left: RestQuarry, right: RestQuarry) -> RestQuarry {
+        let temp = left
+        for (key, value) in right.getMiners() {
+            temp.addMiner(key, value)
+        }
+        return temp
+    }
+
+    public static func + (left: RestQuarry, right: [String:RestQuarryMiner]) -> RestQuarry {
+        let temp = left
+        for (key, value) in right {
+            temp.addMiner(key, value)
+        }
+        return temp
+    }
+
+    public static func + (left: [String:RestQuarryMiner], right: RestQuarry) -> RestQuarry {
+        let temp = right
+        for (key, value) in left {
+            temp.addMiner(key, value)
+        }
+        return temp
+    }
+
+    public static func <-> (left: inout RestQuarry, right: RestQuarryRequest) -> RestQuarryResponse {
+        return left.query(request: right)
+    }
+
+    public static func <-> (left: RestQuarry, right: (String, [String], [String:String])) -> RestQuarryResponse {
+        return left.mine(right.0, namedPlaceholders: right.2, unnamedPlaceholders: right.1)
+    }
+
+    public static func <-> (left: RestQuarry, right: (String, [String:String])) -> RestQuarryResponse {
+        return left.mine(right.0, namedPlaceholders: right.1)
+    }
+
+    public static func <-> (left: RestQuarry, right: (String, [String])) -> RestQuarryResponse {
+        return left.mine(right.0, unnamedPlaceholders: right.1)
+    }
+
+    public static func <-> (left: RestQuarry, right: String) -> RestQuarryResponse {
+        return left.mine(right)
     }
 
 }
