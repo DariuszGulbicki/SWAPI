@@ -173,6 +173,50 @@ public class RestServer {
         headHandlers[uri] = handler
     }
 
+    public func add(_ class: RestEndpoints, suppressNoMethodWarning: Bool = false) {
+        logger?.debug("Adding \(String(describing: `class`)) to Rest Server")
+        let defaultMethod = `class`.defaultMethod()
+        logger?.debug("[CLASS] Default method is \(defaultMethod ?? "not provided")")
+        let defaultPath = `class`.defaultPath()
+        logger?.debug("[CLASS] Default path is \(defaultPath ?? "not provided")")
+        let mirror = Mirror(reflecting: `class`)
+        for child in mirror.children {
+            logger?.debug("[CLASS] Found constant \(child.label!)")
+            if let property = child.value as? RestHandler {
+                logger?.debug("[CLASS] Adding \(child.label!) to Rest Server")
+                if let method = getMethodFromVarName(child.label!, defaultMethod, defaultPath ?? "") {
+                    logger?.debug("[CLASS] Determined method \(method.0) and path \(method.1)")
+                    switch method.0 {
+                        case "get":
+                            logger?.debug("[CLASS] Adding GET handler...")
+                            get(uri: method.1, handler: property)
+                        case "post":
+                            logger?.debug("[CLASS] Adding POST handler...")
+                            post(uri: method.1, handler: property)
+                        case "put":
+                            logger?.debug("[CLASS] Adding PUT handler...")
+                            put(uri: method.1, handler: property)
+                        case "delete":
+                            logger?.debug("[CLASS] Adding DELETE handler...")
+                            delete(uri: method.1, handler: property)
+                        case "patch":
+                            logger?.debug("[CLASS] Adding PATCH handler...")
+                            patch(uri: method.1, handler: property)
+                        case "head":
+                            logger?.debug("[CLASS] Adding HEAD handler...")
+                            head(uri: method.1, handler: property)
+                        default:
+                            continue
+                    }
+                } else {
+                    if !suppressNoMethodWarning {
+                        logger?.warn("For constant \(child.label!) in \(String(describing: `class`)) no default method was provided nor method was specified in variable name. Skipping...")
+                    }
+                }
+            }
+        }
+    }
+
     // Special return handlers setters
 
     public func setNotFoundHandler(handler: RestHandler) {
@@ -190,7 +234,7 @@ public class RestServer {
     public func start(_ port: UInt16, path: String = "") {
         logger?.debug("Starting Rest Server on port \(port)")
         try! server.start(port, forceIPv4: true)
-        logger?.debug("Rest Server started. Running loop")
+        logger?.debug("Rest Server started. Running loop...")
         RunLoop.current.run()
     }
 
@@ -198,6 +242,36 @@ public class RestServer {
         logger?.debug("Stopping Rest Server")
         server.stop()
         logger?.debug("Rest Server stopped")
+    }
+
+    private func getMethodFromVarName(_ varName: String, _ defaultMethod: String?, _ defaultPath: String) -> (String, String)? {
+        let methodsToCheck = ["get", "post", "put", "delete", "patch", "head"]
+        for method in methodsToCheck {
+            let regex = try! Regex(method).ignoresCase()
+            if varName.starts(with: regex) {
+                var name = varName
+                name.removeFirst(method.count)
+                return (method, defaultPath + pathFromVarName(name))
+            }
+        }
+        if defaultMethod == nil {
+            return nil
+        }
+        return (defaultMethod!, checkPath(path: defaultPath + pathFromVarName(varName)))
+    }
+
+    private func pathFromVarName(_ varName: String) -> String {
+        if varName == "" {
+            return "/"
+        }
+        var path = ""
+        for char in varName {
+            if char.isUppercase {
+                path += "/"
+            }
+            path += char.lowercased()
+        }
+        return path
     }
 
     private func checkPath(path: String) -> String {
