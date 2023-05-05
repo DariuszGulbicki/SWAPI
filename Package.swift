@@ -13,7 +13,7 @@ let package = Package(
     products: [
         .library(
             name: "SWAPI",
-            targets: ["SWAPI"]),
+            targets: ["Rest"]),
         .library(
             name: "Rest",
             targets: ["Rest"])
@@ -24,13 +24,6 @@ let package = Package(
         .package(url: "https://github.com/yahoojapan/SwiftyXMLParser", .upToNextMajor(from: "5.0.0"))
     ],
     targets: [
-        .target(
-            name: "SWAPI",
-            dependencies: [
-                .product(name: "Swifter", package: "swifter"),
-                .product(name: "LoggingCamp", package: "logging-camp"),
-                .product(name: "SwiftyXMLParser", package: "SwiftyXMLParser")
-                ]),
         .target(
             name: "Rest",
             dependencies: [

@@ -3,22 +3,12 @@ import FoundationNetworking
 import LoggingCamp
 import Swifter
 
-precedencegroup SecondaryTernaryPrecedence {
-    associativity: right
-    higherThan: TernaryPrecedence
-    lowerThan: LogicalDisjunctionPrecedence
-}
+infix operator ~: AssignmentPrecedence
+infix operator <>: AssignmentPrecedence
 
-
-infix operator +: AdditionPrecedence
-infix operator +=: AdditionPrecedence
-infix operator <=: AdditionPrecedence
-infix operator *: AdditionPrecedence
+infix operator <-: AssignmentPrecedence
 
 postfix operator *
-
-infix operator <: SecondaryTernaryPrecedence
-infix operator ><: TernaryPrecedence
 
 public class RestServer {
     
@@ -167,27 +157,53 @@ public class RestServer {
     }
 
     public func get(uri: String, handler: RestHandler) {
+        logger?.debug("Adding GET handler for \(uri)")
         getHandlers[uri] = handler
     }
 
     public func post(uri: String, handler: RestHandler) {
+        logger?.debug("Adding POST handler for \(uri)")
         postHandlers[uri] = handler
     }
 
     public func put(uri: String, handler: RestHandler) {
+        logger?.debug("Adding PUT handler for \(uri)")
         putHandlers[uri] = handler
     }
 
     public func delete(uri: String, handler: RestHandler) {
+        logger?.debug("Adding DELETE handler for \(uri)")
         deleteHandlers[uri] = handler
     }
 
     public func patch(uri: String, handler: RestHandler) {
+        logger?.debug("Adding PATCH handler for \(uri)")
         patchHandlers[uri] = handler
     }
 
     public func head(uri: String, handler: RestHandler) {
+        logger?.debug("Adding HEAD handler for \(uri)")
         headHandlers[uri] = handler
+    }
+
+    public func endpoint(method: String, uri: String, handler: RestHandler) {
+        logger?.debug("Adding \(method) handler for \(uri)")
+        switch method {
+            case "GET":
+                getHandlers[uri] = handler
+            case "POST":
+                postHandlers[uri] = handler
+            case "PUT":
+                putHandlers[uri] = handler
+            case "DELETE":
+                deleteHandlers[uri] = handler
+            case "PATCH":
+                patchHandlers[uri] = handler
+            case "HEAD":
+                headHandlers[uri] = handler
+            default:
+                requestLogger?.error("Method \(method) that is not allowed was used by remote")
+        }
     }
 
     public func add(_ class: RestEndpoints, suppressNoMethodWarning: Bool = false) {
@@ -248,11 +264,15 @@ public class RestServer {
         internalServerErrorHandler = handler
     }
     
-    public func start(_ port: UInt16, path: String = "") {
+    public func start(_ port: UInt16, path: String = "", blockThread: Bool = true, forceIPv4: Bool = true) {
         logger?.debug("Starting Rest Server on port \(port)")
-        try! server.start(port, forceIPv4: true)
+        do {
+            try server.start(port, forceIPv4: true)
         logger?.debug("Rest Server started. Running loop...")
         RunLoop.current.run()
+        } catch {
+            logger?.error("Couldnt start rest server because of error: \(error)")
+        }
     }
 
     public func stop() {
@@ -337,6 +357,91 @@ public class RestServer {
 
     // Operators
 
-    
+    public static func += (left: RestServer, right: any RestEndpoints) {
+        left.add(right)
+    }
+
+    public static func + (left: RestServer, right: any RestEndpoints) -> RestServer {
+        left += right
+        return left
+    }
+
+    public static func += (left: RestServer, right: RestServer) {
+        left.getHandlers.merge(right.getHandlers) { (current, _) in current }
+        left.postHandlers.merge(right.postHandlers) { (current, _) in current }
+        left.putHandlers.merge(right.putHandlers) { (current, _) in current }
+        left.deleteHandlers.merge(right.deleteHandlers) { (current, _) in current }
+        left.patchHandlers.merge(right.patchHandlers) { (current, _) in current }
+        left.headHandlers.merge(right.headHandlers) { (current, _) in current }
+    }
+
+    public static func + (left: RestServer, right: RestServer) -> RestServer {
+        left += right
+        return left
+    }
+
+    public static func ~= (left: RestServer, right: RestServer) {
+        left.internalServerErrorHandler = right.internalServerErrorHandler
+        left.methodNotAllowedHandler = right.methodNotAllowedHandler
+        left.notFoundHandler = right.notFoundHandler
+    }
+
+    public static func ~ (left: RestServer, right: RestServer) -> RestServer {
+        left ~= right
+        return left
+    }
+
+    public static func <= (left: RestServer, right: RestServer) {
+        left.logger = right.logger
+    }
+
+    public static func <> (left: RestServer, right: RestServer) {
+        left += right
+        left ~= right
+        left <= right
+    }
+
+    public static func <- (left: RestServer, right: (String, String, any RestHandler)) {
+        switch right.0 {
+            case "get":
+                left.get(uri: right.1, handler: right.2)
+            case "post":
+                left.post(uri: right.1, handler: right.2)
+            case "put":
+                left.put(uri: right.1, handler: right.2)
+            case "delete":
+                left.delete(uri: right.1, handler: right.2)
+            case "patch":
+                left.patch(uri: right.1, handler: right.2)
+            case "head":
+                left.head(uri: right.1, handler: right.2)
+            default:
+                left.logger?.error("Invalid method \(right.0) specified in tuple while assigning handler via operator")
+        }
+    }
+
+    public static func <- (left: RestServer, right: any RestEndpoints) {
+        left.add(right)
+    }
+
+    public static func * (left: RestServer, right: Int) {
+        left.start(UInt16(right))
+    }
+
+    public static func * (left: RestServer, right: UInt16) {
+        left.start(right)
+    }
+
+    public static func * (left: RestServer, right: (UInt16, String)) {
+        left.start(right.0, path: right.1)
+    }
+
+    public static func * (left: RestServer, right: String) {
+        left.start(80, path: right)
+    }
+
+    public static postfix func * (left: RestServer) {
+        left.start(80)
+    }
     
 }
